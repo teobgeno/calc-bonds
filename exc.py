@@ -307,12 +307,11 @@ for index, row in df.iterrows():
         else:
             calculated_spread.append('')
 
-'''
-df.insert(12,"Calculated Spreads", calculated_spread, True)
+
+df.insert(12, "Calculated Spreads", calculated_spread, True)
 file_name = 'calculated_spreads.xlsx'
 df.to_excel(file_name)
 print('done!!!')
-'''
 
 
 # print(dataframe1)
