@@ -93,6 +93,76 @@ def calculate_sum_product_0(spread, row, baseline, remaining_period):
     return sum_product
 
 
+def calculate_sum_product_1_cl(spread, row, baseline, remaining_period):
+    np_around = 6
+    rem_period = excel_round(
+        (days_between(row.iloc[7].strftime('%Y-%m-%d'), str(year-1) + '-12-31')) / 365.25, np_around)
+
+    # if remaining_period.is_integer():
+    #     total_period = remaining_period + 1
+    # else:
+    #     total_period = math.floor(remaining_period) + 1
+
+    # Expire date (Y) - Next coupon date (Y)
+    # total_period = 0
+    # total_period = row[7].year-row[11].year
+
+    cashflow_list = []
+    discount_factor_list = []
+
+    loop_count = 0
+    for x in range(row.iloc[11].year, row.iloc[7].year):
+
+        # print(date(row.iloc[11].year+loop_count, row.iloc[11].month, row.iloc[11].day))
+        coupon_date = date(row.iloc[11].year+loop_count, row.iloc[11].month, row.iloc[11].day)
+        t = excel_round(
+            (days_between(coupon_date.strftime('%Y-%m-%d'), str(year-1) + '-12-31')) / 365.25, np_around)
+
+        cashflow_norm = row.iloc[9] * row.iloc[6]  # Coupon * Face value
+
+        if isinstance(t, int):
+            baseline_sel = baseline[t]
+
+        if isinstance(t, float):
+            baseline_sel = baseline[math.ceil(t)]
+
+        discount_factor_norm_plus = excel_round((1/(1 + (baseline_sel) + spread)), np_around)
+        discount_factor_norm = excel_round((discount_factor_norm_plus ** t), np_around)
+
+        cashflow_list.append(cashflow_norm)
+        discount_factor_list.append(discount_factor_norm)
+        outSceen(str(x) + ' - ' + str(t) + ' - ' + str(cashflow_norm) + ' - ' + str(100*discount_factor_norm) +
+                 '%' + ' - ' + str(baseline_sel) + ' - ' + str(discount_factor_norm_plus))
+        loop_count = loop_count + 1
+
+    # final line
+    baseline_fin = 0
+    if isinstance(remaining_period, int):
+        baseline_fin = baseline[remaining_period]
+
+    if isinstance(remaining_period, float):
+        baseline_fin = baseline[math.ceil(remaining_period)]
+
+    cashflow_fin = (row.iloc[9] * row.iloc[6]) + row.iloc[6]  # (Coupon *  Face value) + Face value
+    # discount_factor_fin = 1/pow((1 + baseline_fin + spread),remaining_period)
+    discount_factor_fin_plus = excel_round((1/(1 + baseline_fin + spread)), np_around)
+    discount_factor_fin = excel_round((discount_factor_fin_plus ** rem_period), np_around)
+
+    cashflow_list.append(cashflow_fin)
+    discount_factor_list.append(discount_factor_fin)
+    outSceen(str(remaining_period) + ' - ' + str(cashflow_fin) + ' - ' + str(100 *
+             discount_factor_fin) + ' - ' + str(baseline_fin) + ' - ' + str(discount_factor_fin_plus))
+
+    # Calculate the SUMPRODUCT
+    sum_product = sum(a * b for a, b in zip(cashflow_list, discount_factor_list))
+
+    outSceen('d')
+    outSceen(rem_period)
+    outSceen('d')
+
+    return sum_product
+
+
 def calculate_sum_product_1(spread, row, baseline, remaining_period):
     np_around = 9
     rem_period = excel_round(
@@ -226,7 +296,7 @@ for index, row in df.iterrows():
             # Initial guess for spread
             initial_spread = 0
 
-            # objective_brute(initial_spread, row, baseline, row.iloc[11], row.iloc[8])
+            # current_sum_product = calculate_sum_product_1_cl(0, row, baseline, row.iloc[12])
 
             # Minimize the objective function
             result = minimize(objective, initial_spread, args=(
