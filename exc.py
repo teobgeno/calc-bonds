@@ -5,6 +5,8 @@ from scipy.optimize import minimize
 import decimal
 import numpy as np
 from datetime import date
+from dateutil.relativedelta import relativedelta
+from dateutil.relativedelta import relativedelta
 # np.set_printoptions(precision=32)
 # Face value             row[6]
 # MV                     row[8]
@@ -40,6 +42,11 @@ def days_between(d1, d2):
     d1 = datetime.datetime.strptime(d1, "%Y-%m-%d")
     d2 = datetime.datetime.strptime(d2, "%Y-%m-%d")
     return abs((d1 - d2).days)
+
+
+def get_next_coupon_date(d, period):
+    next_coupon = datetime.datetime.strptime(d, "%Y-%m-%d") + relativedelta(months=period)
+    return next_coupon
 
 
 def calculate_sum_product_0(spread, row, baseline, remaining_period):
@@ -165,8 +172,6 @@ def calculate_sum_product_1_cl(spread, row, baseline, remaining_period):
 
 def calculate_sum_product_1(spread, row, baseline, remaining_period):
     np_around = 9
-    rem_period = excel_round(
-        (days_between(row.iloc[7].strftime('%Y-%m-%d'), str(year-1) + '-12-31')) / 365.25, np_around)
 
     # if remaining_period.is_integer():
     #     total_period = remaining_period + 1
@@ -182,9 +187,9 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
 
     loop_count = 0
     for x in range(row.iloc[11].year, row.iloc[7].year):
-
-        # print(date(row.iloc[11].year+loop_count, row.iloc[11].month, row.iloc[11].day))
-        coupon_date = date(row.iloc[11].year+loop_count, row.iloc[11].month, row.iloc[11].day)
+        coupon_date = get_next_coupon_date(
+            str(row.iloc[11].year) + '-' + str(row.iloc[11].month) + '-' + str(row.iloc[11].day), (loop_count*12))
+        # coupon_date = date(row.iloc[11].year+loop_count, row.iloc[11].month, row.iloc[11].day)
         t = excel_round(
             (days_between(coupon_date.strftime('%Y-%m-%d'), str(year-1) + '-12-31')) / 365.25, np_around)
 
@@ -201,11 +206,14 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
 
         cashflow_list.append(cashflow_norm)
         discount_factor_list.append(discount_factor_norm)
-        outSceen(str(x) + ' - ' + str(t) + ' - ' + str(cashflow_norm) + ' - ' + str(100*discount_factor_norm) +
+        outSceen(str(coupon_date) + ' - ' + str(t) + ' - ' + str(cashflow_norm) + ' - ' + str(100*discount_factor_norm) +
                  '%' + ' - ' + str(baseline_sel) + ' - ' + str(discount_factor_norm_plus[0]))
         loop_count = loop_count + 1
 
     # final line
+    # (Expire date - Valuadtion date) / 365.25
+    rem_period = excel_round(
+        (days_between(row.iloc[7].strftime('%Y-%m-%d'), str(year-1) + '-12-31')) / 365.25, np_around)
     baseline_fin = 0
     if isinstance(remaining_period, int):
         baseline_fin = baseline[remaining_period]
@@ -214,21 +222,17 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
         baseline_fin = baseline[math.ceil(remaining_period)]
 
     cashflow_fin = (row.iloc[9] * row.iloc[6]) + row.iloc[6]  # (Coupon *  Face value) + Face value
-    # discount_factor_fin = 1/pow((1 + baseline_fin + spread),remaining_period)
     discount_factor_fin_plus = np.around((1/(1 + baseline_fin + spread)), np_around)
     discount_factor_fin = np.around((discount_factor_fin_plus[0] ** rem_period), np_around)
 
     cashflow_list.append(cashflow_fin)
     discount_factor_list.append(discount_factor_fin)
-    outSceen(str(remaining_period) + ' - ' + str(cashflow_fin) + ' - ' + str(100 *
+
+    outSceen(str(row.iloc[7]) + ' - ' + str(rem_period) + ' - ' + str(cashflow_fin) + ' - ' + str(100 *
              discount_factor_fin) + ' - ' + str(baseline_fin) + ' - ' + str(discount_factor_fin_plus[0]))
 
     # Calculate the SUMPRODUCT
     sum_product = sum(a * b for a, b in zip(cashflow_list, discount_factor_list))
-
-    outSceen('d')
-    outSceen(rem_period)
-    outSceen('d')
 
     return sum_product
 
@@ -308,10 +312,10 @@ for index, row in df.iterrows():
             calculated_spread.append('')
 
 
-df.insert(12, "Calculated Spreads", calculated_spread, True)
-file_name = 'calculated_spreads.xlsx'
-df.to_excel(file_name)
-print('done!!!')
+# df.insert(12, "Calculated Spreads", calculated_spread, True)
+# file_name = 'calculated_spreads.xlsx'
+# df.to_excel(file_name)
+# print('done!!!')
 
 
 # print(dataframe1)
