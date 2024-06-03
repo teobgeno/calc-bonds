@@ -189,11 +189,11 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
     coupon_months_plus = 0
     if (row.iloc[10] == 1):
         # Expire date (Y) - Next coupon date (Y
-        loop_to = row.iloc[7].year - row.iloc[11].year
+        loop_to = (row.iloc[7].year - (year-1))-1
         coupon_months_plus = 12
 
     if (row.iloc[10] == 2):
-        loop_to = (row.iloc[7].year - (year-1))
+        loop_to = ((row.iloc[7].year - (year-1))*2)-1
         coupon_months_plus = 6
 
     print(str(row.iloc[7].year) + ' - ' + str((year-1)))
@@ -295,7 +295,7 @@ calculated_spread.append('')
 
 for index, row in df.iterrows():
     # 1 64 23
-    if index == 1:
+    if index == 23:
         # outSceen(row.iloc[1])
         # outSceen(row.iloc[6])
         # outSceen(row.iloc[8])
