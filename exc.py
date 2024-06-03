@@ -188,14 +188,16 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
     loop_to = 0
     coupon_months_plus = 0
     if (row.iloc[10] == 1):
+        # Expire date (Y) - Next coupon date (Y
         loop_to = row.iloc[7].year - row.iloc[11].year
         coupon_months_plus = 12
+
     if (row.iloc[10] == 2):
-        loop_to = (row.iloc[7].year - row.iloc[11].year)*2
+        loop_to = (row.iloc[7].year - (year-1))
         coupon_months_plus = 6
 
+    print(str(row.iloc[7].year) + ' - ' + str((year-1)))
     for x in range(0, loop_to):
-        print(str(x))
         coupon_date = get_next_coupon_date(
             str(row.iloc[11].year) + '-' + str(row.iloc[11].month) + '-' + str(row.iloc[11].day), (x*coupon_months_plus))
         # coupon_date = date(row.iloc[11].year+loop_count, row.iloc[11].month, row.iloc[11].day)
@@ -246,7 +248,7 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
 
 
 def objective(spread, row, baseline, remaining_period, desired_sum_product, frequency):
-    if frequency == 1:
+    if frequency == 1 or frequency == 2:
         current_sum_product = calculate_sum_product_1(
             spread, row, baseline, remaining_period)
 
@@ -292,23 +294,24 @@ calculated_spread = []
 calculated_spread.append('')
 
 for index, row in df.iterrows():
-    # 1 64
+    # 1 64 23
     if index == 1:
+        # outSceen(row.iloc[1])
         # outSceen(row.iloc[6])
         # outSceen(row.iloc[8])
         # outSceen(str(year-1) + '-12-31')
         # outSceen(row.iloc[7])
         # outSceen(row.iloc[9])
         # outSceen(row.iloc[10])
-        # rem_period = (days_between(row.iloc[7].strftime(
-        #     '%Y-%m-%d'), str(year-1) + '-12-31')) / 365.25
         # outSceen('-----------------------')
 
-        if row.iloc[10] == 1 or row.iloc[10] == 0:
+        if row.iloc[10] == 1 or row.iloc[10] == 2:
             # Initial guess for spread
             initial_spread = 0
 
-            # current_sum_product = calculate_sum_product_1_cl(0, row, baseline, row.iloc[12])
+            # optimal_spread = 0
+            # current_sum_product = calculate_sum_product_1(
+            #     0, row, baseline, row.iloc[12])
 
             # Minimize the objective function
             result = minimize(objective, initial_spread, args=(
