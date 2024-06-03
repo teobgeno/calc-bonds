@@ -185,10 +185,19 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
     cashflow_list = []
     discount_factor_list = []
 
-    loop_count = 0
-    for x in range(row.iloc[11].year, row.iloc[7].year):
+    loop_to = 0
+    coupon_months_plus = 0
+    if (row.iloc[10] == 1):
+        loop_to = row.iloc[7].year - row.iloc[11].year
+        coupon_months_plus = 12
+    if (row.iloc[10] == 2):
+        loop_to = (row.iloc[7].year - row.iloc[11].year)*2
+        coupon_months_plus = 6
+
+    for x in range(0, loop_to):
+        print(str(x))
         coupon_date = get_next_coupon_date(
-            str(row.iloc[11].year) + '-' + str(row.iloc[11].month) + '-' + str(row.iloc[11].day), (loop_count*12))
+            str(row.iloc[11].year) + '-' + str(row.iloc[11].month) + '-' + str(row.iloc[11].day), (x*coupon_months_plus))
         # coupon_date = date(row.iloc[11].year+loop_count, row.iloc[11].month, row.iloc[11].day)
         t = excel_round(
             (days_between(coupon_date.strftime('%Y-%m-%d'), str(year-1) + '-12-31')) / 365.25, np_around)
@@ -208,7 +217,6 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
         discount_factor_list.append(discount_factor_norm)
         outSceen(str(coupon_date) + ' - ' + str(t) + ' - ' + str(cashflow_norm) + ' - ' + str(100*discount_factor_norm) +
                  '%' + ' - ' + str(baseline_sel) + ' - ' + str(discount_factor_norm_plus[0]))
-        loop_count = loop_count + 1
 
     # final line
     # (Expire date - Valuadtion date) / 365.25
