@@ -49,57 +49,6 @@ def get_next_coupon_date(d, period):
     return next_coupon
 
 
-def calculate_sum_product_0(spread, row, baseline, remaining_period):
-    # remaining_period = 0.09035
-    rem_period = (days_between(row.iloc[7].strftime('%Y-%m-%d'), str(year-1) + '-12-31')) / 365.25
-    cashflow_list = []
-    discount_factor_list = []
-    baseline_fin = baseline[1]
-    cashflow_fin = row.iloc[6]
-    discount_factor_fin_plus = np.around((1/(1 + baseline_fin + spread)), 9)
-    discount_factor_fin = np.around((discount_factor_fin_plus[0] ** rem_period), 9)
-    # discount_factor_fin = 1/pow((1 + baseline_fin + spread),remaining_period)
-
-    cashflow_list.append(cashflow_fin)
-    discount_factor_list.append(discount_factor_fin)
-
-    # Calculate the SUMPRODUCT
-    sum_product = sum(a * b for a, b in zip(cashflow_list, discount_factor_list))
-
-    outSceen('##')
-    outSceen(spread)
-    outSceen(discount_factor_fin)
-    outSceen(str(remaining_period) + ' - ' + str(cashflow_fin) + ' - ' +
-             str(100*discount_factor_fin) + ' - ' + str(baseline_fin))
-    outSceen(str(sum_product))
-    r = np.around((1/(1 + baseline_fin + spread)), 9)
-
-    r2 = (r[0] ** remaining_period)*100
-    r3 = excel_round(r2, 4)
-    r4 = (0.967520342 ** 0.090349076)
-
-    outSceen('d')
-    outSceen(rem_period)
-    outSceen('d')
-    outSceen('+')
-    outSceen(str(discount_factor_fin_plus[0]))
-    outSceen(str(r[0]))
-    outSceen('+')
-    outSceen('^')
-    outSceen(str(remaining_period))
-    outSceen(str(discount_factor_fin))
-    outSceen(str(r4))
-    # outSceen(str(r[0]))
-    # outSceen(str(r2))
-
-    outSceen('^')
-    # outSceen(str(r2))
-    # outSceen(str(100*discount_factor_fin))
-    outSceen('@@')
-
-    return sum_product
-
-
 def calculate_sum_product_1(spread, row, baseline, remaining_period):
     np_around = 9
 
@@ -112,29 +61,39 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
     # total_period = 0
     # total_period = row[7].year-row[11].year
 
+    face_value = row.iloc[6]
+    expire_date = row.iloc[7]
+    coupon = row.iloc[9]
+    frequency = row.iloc[10]
+    next_coupon_date = row.iloc[11]
+
     cashflow_list = []
     discount_factor_list = []
 
     loop_to = 0
     coupon_months_plus = 0
-    if (row.iloc[10] == 1):
+    if (frequency == 1):
         # Expire date (Y) - Next coupon date (Y
-        loop_to = (row.iloc[7].year - (year-1))-1
+        loop_to = (expire_date.year - (year-1))-1
         coupon_months_plus = 12
 
-    if (row.iloc[10] == 2):
-        loop_to = ((row.iloc[7].year - (year-1))*2)-1
+    if (frequency == 2):
+        loop_to = ((expire_date.year - (year-1))*2)-1
         coupon_months_plus = 6
 
-    print(str(row.iloc[7].year) + ' - ' + str((year-1)))
+    print(str(expire_date.year) + ' - ' + str((year-1)))
     for x in range(0, loop_to):
         coupon_date = get_next_coupon_date(
-            str(row.iloc[11].year) + '-' + str(row.iloc[11].month) + '-' + str(row.iloc[11].day), (x*coupon_months_plus))
-        # coupon_date = date(row.iloc[11].year+loop_count, row.iloc[11].month, row.iloc[11].day)
+            str(next_coupon_date.year) + '-' + str(next_coupon_date.month) + '-' + str(next_coupon_date.day), (x*coupon_months_plus))
+
         t = excel_round(
             (days_between(coupon_date.strftime('%Y-%m-%d'), str(year-1) + '-12-31')) / 365.25, np_around)
 
-        cashflow_norm = row.iloc[9] * row.iloc[6]  # Coupon * Face value
+        cashflow_norm = 0
+        if (frequency == 1):
+            cashflow_norm = coupon * face_value
+        if (frequency == 2):
+            cashflow_norm = (coupon * face_value) / 2
 
         if isinstance(t, int):
             baseline_sel = baseline[t]
@@ -153,7 +112,8 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
     # final line
     # (Expire date - Valuadtion date) / 365.25
     rem_period = excel_round(
-        (days_between(row.iloc[7].strftime('%Y-%m-%d'), str(year-1) + '-12-31')) / 365.25, np_around)
+        (days_between(expire_date.strftime('%Y-%m-%d'), str(year-1) + '-12-31')) / 365.25, np_around)
+
     baseline_fin = 0
     if isinstance(remaining_period, int):
         baseline_fin = baseline[remaining_period]
@@ -161,14 +121,19 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
     if isinstance(remaining_period, float):
         baseline_fin = baseline[math.ceil(remaining_period)]
 
-    cashflow_fin = (row.iloc[9] * row.iloc[6]) + row.iloc[6]  # (Coupon *  Face value) + Face value
+    cashflow_fin = 0
+    if (frequency == 1):
+        cashflow_fin = (coupon * face_value) + face_value
+    if (frequency == 2):
+        cashflow_fin = (coupon * face_value)/2 + face_value
+
     discount_factor_fin_plus = np.around((1/(1 + baseline_fin + spread)), np_around)
     discount_factor_fin = np.around((discount_factor_fin_plus[0] ** rem_period), np_around)
 
     cashflow_list.append(cashflow_fin)
     discount_factor_list.append(discount_factor_fin)
 
-    outSceen(str(row.iloc[7]) + ' - ' + str(rem_period) + ' - ' + str(cashflow_fin) + ' - ' + str(100 *
+    outSceen(str(expire_date) + ' - ' + str(rem_period) + ' - ' + str(cashflow_fin) + ' - ' + str(100 *
              discount_factor_fin) + ' - ' + str(baseline_fin) + ' - ' + str(discount_factor_fin_plus[0]))
 
     # Calculate the SUMPRODUCT
@@ -178,12 +143,9 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
 
 
 def objective(spread, row, baseline, remaining_period, desired_sum_product, frequency):
+    print(remaining_period)
     if frequency == 1 or frequency == 2:
-        current_sum_product = calculate_sum_product_1(
-            spread, row, baseline, remaining_period)
-
-    if frequency == 0:
-        current_sum_product = calculate_sum_product_0(spread, row, baseline, remaining_period)
+        current_sum_product = calculate_sum_product_1(spread, row, baseline, remaining_period)
 
     outSceen(str(current_sum_product) + ' ---' + str(desired_sum_product))
     return (current_sum_product - desired_sum_product) ** 2
@@ -224,16 +186,17 @@ calculated_spread = []
 calculated_spread.append('')
 
 for index, row in df.iterrows():
-    # 1 64 23
-    if index == 1:
-        # outSceen(row.iloc[1])
-        # outSceen(row.iloc[6])
-        # outSceen(row.iloc[8])
-        # outSceen(str(year-1) + '-12-31')
-        # outSceen(row.iloc[7])
-        # outSceen(row.iloc[9])
-        # outSceen(row.iloc[10])
-        # outSceen('-----------------------')
+    # 1 64 23 -  39
+    if index == 39:
+        outSceen(row.iloc[1])
+        outSceen(row.iloc[6])
+        outSceen(row.iloc[8])
+        outSceen(str(year-1) + '-12-31')
+        outSceen(row.iloc[7])
+        outSceen(row.iloc[9])
+        outSceen(row.iloc[10])
+        outSceen(row.iloc[12])
+        outSceen('-----------------------')
 
         if row.iloc[10] == 1 or row.iloc[10] == 2:
             # Initial guess for spread
@@ -244,8 +207,11 @@ for index, row in df.iterrows():
             #     0, row, baseline, row.iloc[12])
 
             # Minimize the objective function
+            remaining_period = row.iloc[13]
+            market_value = row.iloc[8]
+            frequency = row.iloc[10]
             result = minimize(objective, initial_spread, args=(
-                row, baseline, row.iloc[12], row.iloc[8], row.iloc[10]))
+                row, baseline, remaining_period, market_value, frequency))
             optimal_spread = result.x[0]
             outSceen("Optimal spread:" + str(optimal_spread*100))
             calculated_spread.append(optimal_spread*100)
