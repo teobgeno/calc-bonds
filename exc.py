@@ -22,7 +22,7 @@ from dateutil.relativedelta import relativedelta
 
 
 def outSceen(s):
-    print(s)
+    # print(s)
     return 1
 
 
@@ -81,7 +81,6 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
         loop_to = ((expire_date.year - (year-1))*2)-1
         coupon_months_plus = 6
 
-    print(str(expire_date.year) + ' - ' + str((year-1)))
     for x in range(0, loop_to):
         coupon_date = get_next_coupon_date(
             str(next_coupon_date.year) + '-' + str(next_coupon_date.month) + '-' + str(next_coupon_date.day), (x*coupon_months_plus))
@@ -143,7 +142,6 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
 
 
 def objective(spread, row, baseline, remaining_period, desired_sum_product, frequency):
-    print(remaining_period)
     if frequency == 1 or frequency == 2:
         current_sum_product = calculate_sum_product_1(spread, row, baseline, remaining_period)
 
@@ -187,7 +185,7 @@ calculated_spread.append('')
 
 for index, row in df.iterrows():
     # 1 64 23 -  39
-    if index == 39:
+    if index > 0:
         outSceen(row.iloc[1])
         outSceen(row.iloc[6])
         outSceen(row.iloc[8])
@@ -219,10 +217,10 @@ for index, row in df.iterrows():
             calculated_spread.append('')
 
 
-# df.insert(12, "Calculated Spreads", calculated_spread, True)
-# file_name = 'calculated_spreads.xlsx'
-# df.to_excel(file_name)
-# print('done!!!')
+df.insert(37, "Calculated Spreads", calculated_spread, True)
+file_name = 'calculated_spreads.xlsx'
+df.to_excel(file_name)
+print('done!!!')
 
 
 # print(dataframe1)
