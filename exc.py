@@ -6,7 +6,6 @@ import decimal
 import numpy as np
 from datetime import date
 from dateutil.relativedelta import relativedelta
-from dateutil.relativedelta import relativedelta
 # np.set_printoptions(precision=32)
 # Face value             row[6]
 # MV                     row[8]
@@ -22,7 +21,7 @@ from dateutil.relativedelta import relativedelta
 
 
 def outSceen(s):
-    # print(s)
+    print(s)
     return 1
 
 
@@ -42,6 +41,13 @@ def days_between(d1, d2):
     d1 = datetime.datetime.strptime(d1, "%Y-%m-%d")
     d2 = datetime.datetime.strptime(d2, "%Y-%m-%d")
     return abs((d1 - d2).days)
+
+
+def months_between(d1, d2):
+    d1 = datetime.datetime.strptime(d1, "%Y-%m-%d")
+    d2 = datetime.datetime.strptime(d2, "%Y-%m-%d")
+    delta = relativedelta(d1, d2)
+    return abs(delta.months + (delta.years * 12))
 
 
 def get_next_coupon_date(d, period):
@@ -78,7 +84,9 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
         coupon_months_plus = 12
 
     if (frequency == 2):
-        loop_to = ((expire_date.year - (year-1))*2)-1
+        months_diff = months_between(expire_date.strftime('%Y-%m-%d'), str(year-1) + '-12-31')
+        # loop_to = ((expire_date.year - (year-1))*2)-1
+        loop_to = math.floor(months_diff/6)
         coupon_months_plus = 6
 
     for x in range(0, loop_to):
@@ -184,8 +192,8 @@ calculated_spread = []
 calculated_spread.append('')
 
 for index, row in df.iterrows():
-    # 1 64 23 -  39
-    if index > 0:
+    # > 0 1 64 23 -  39 -- 48 49
+    if index == 49:
         outSceen(row.iloc[1])
         outSceen(row.iloc[6])
         outSceen(row.iloc[8])
@@ -217,10 +225,10 @@ for index, row in df.iterrows():
             calculated_spread.append('')
 
 
-df.insert(37, "Calculated Spreads", calculated_spread, True)
-file_name = 'calculated_spreads.xlsx'
-df.to_excel(file_name)
-print('done!!!')
+# df.insert(37, "Calculated Spreads", calculated_spread, True)
+# file_name = 'calculated_spreads.xlsx'
+# df.to_excel(file_name)
+# print('done!!!')
 
 
 # print(dataframe1)
