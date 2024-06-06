@@ -6,6 +6,7 @@ import decimal
 import numpy as np
 from datetime import date
 from dateutil.relativedelta import relativedelta
+from decimal import Decimal
 # np.set_printoptions(precision=32)
 # Face value             row[6]
 # MV                     row[8]
@@ -21,7 +22,12 @@ from dateutil.relativedelta import relativedelta
 
 
 def outSceen(s):
-    print(s)
+    # print(s)
+    return 1
+
+
+def outSceenError(s):
+    print("Error: " + s)
     return 1
 
 
@@ -85,8 +91,12 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
 
     if (frequency == 2):
         months_diff = months_between(expire_date.strftime('%Y-%m-%d'), str(year-1) + '-12-31')
-        # loop_to = ((expire_date.year - (year-1))*2)-1
-        loop_to = math.floor(months_diff/6)
+
+        if Decimal(months_diff/6) % 1 == 0:
+            loop_to = math.floor((months_diff/6)) - 1
+        elif not Decimal(months_diff/6) % 1 == 0:
+            loop_to = math.floor(months_diff/6)
+
         coupon_months_plus = 6
 
     for x in range(0, loop_to):
@@ -95,6 +105,9 @@ def calculate_sum_product_1(spread, row, baseline, remaining_period):
 
         t = excel_round(
             (days_between(coupon_date.strftime('%Y-%m-%d'), str(year-1) + '-12-31')) / 365.25, np_around)
+
+        if (coupon_date == expire_date):
+            outSceenError('duplicate expired date')
 
         cashflow_norm = 0
         if (frequency == 1):
@@ -193,7 +206,7 @@ calculated_spread.append('')
 
 for index, row in df.iterrows():
     # > 0 1 64 23 -  39 -- 48 49
-    if index == 49:
+    if index > 0:
         outSceen(row.iloc[1])
         outSceen(row.iloc[6])
         outSceen(row.iloc[8])
@@ -225,23 +238,7 @@ for index, row in df.iterrows():
             calculated_spread.append('')
 
 
-# df.insert(37, "Calculated Spreads", calculated_spread, True)
-# file_name = 'calculated_spreads.xlsx'
-# df.to_excel(file_name)
-# print('done!!!')
-
-
-# print(dataframe1)
-
-
-# Define the values
-# value_1 = 12.375
-# percentage_value = 91404
-
-# Convert the percentage to a decimal by dividing by 100
-# decimal_percentage = percentage_value / 100
-
-# Calculate the sum product
-# sum_product = value_1 + decimal_percentage
-
-# print(sum_product)
+df.insert(37, "Calculated Spreads", calculated_spread, True)
+file_name = 'calculated_spreads.xlsx'
+df.to_excel(file_name)
+print('done!!!')
